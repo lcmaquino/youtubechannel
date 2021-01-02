@@ -26,10 +26,7 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
     public function __construct($config = [], Request $request)
     {
         $this->request = $request;
-        $this->clientId = $config['client_id'];
-        $this->redirectUri = $config['redirect_uri'];
-        $this->clientSecret = $config['client_secret'];
-        $this->channelId = $config['youtube_channel_id'];
+        $this->setConfig($config);
         $this->scopes = [
             'openid',
             'email',
@@ -57,6 +54,43 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
      */
     public function getChannelId() {
         return $this->channelId;
+    }
+
+    /**
+     * Set the configuration of the Google OAuth 2.0 client and the YouTube
+     * channel ID.
+     *
+     * The $config parameter should be formatted as:
+     *   [
+     *     'client_id' => string,
+     *     'client_secret' => string,
+     *     'redirect_uri' => string,
+     *     'youtube_channel_id' => string,
+     *   ]
+     *
+     * @param array  $config
+     * @return $this
+     */
+    public function setConfig($config = []){
+        $this->clientId = $config['client_id'];
+        $this->clientSecret = $config['client_secret'];
+        $this->redirectUri = $config['redirect_uri'];
+        $this->channelId = $config['youtube_channel_id'];
+        return $this;
+    }
+
+    /**
+     * Get the configuration of the Google OAuth 2.0 client and the YouTube
+     * channel ID.
+     * @return void
+     */
+    public function getConfig(){
+        return [
+            'client_id' => $this->clientId,
+            'client_secret' => $this->clientSecret,
+            'client_redirect' => $this->redirectUri,
+            'youtube_channel_id' => $this->channelId,
+        ];
     }
 
     /**
