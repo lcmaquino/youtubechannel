@@ -1,0 +1,43 @@
+{
+    "name": "lcmaquino/youtubechannel",
+    "description": "YouTubeChannel adds to Laravel the service provider for OAuth 2.0 authentication with YouTube Google account.",
+    "keywords": ["youtube", "google", "laravel"],
+    "license": "GPL-3.0-or-later",
+    "homepage": "https://github.com/lcmaquino/youtubechannel",
+    "support": {
+        "issues": "https://github.com/lcmaquino/youtubechannel/issues",
+        "source": "https://github.com/lcmaquino/youtubechannel"
+    },
+    "authors": [
+        {
+            "name": "Luiz C. M. de Aquino",
+            "email": "aquino.luizclaudio@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.2",
+        "illuminate/http": "^6.0|^7.0|^8.0",
+        "illuminate/support": "^6.0|^7.0|^8.0",
+        "lcmaquino/googleoauth2": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lcmaquino\\YouTubeChannel\\": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.x-dev"
+        },
+        "laravel": {
+            "providers": [
+                "Lcmaquino\\YouTubeChannel\\YouTubeChannelProvider"
+            ],
+            "aliases": {
+                "YouTubeChannel": "Lcmaquino\\YouTubeChannel\\Facades\\YouTubeChannel"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
