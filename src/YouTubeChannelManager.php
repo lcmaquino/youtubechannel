@@ -94,7 +94,7 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
     }
 
     /**
-     * Get the subscriptions URL for YouTube DATA v3 API.
+     * Get the subscriptions URL for YouTube Data v3 API.
      *
      * @return string
      */
@@ -104,7 +104,7 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
     }
 
     /**
-     * Get the channels URL for YouTube DATA v3 API.
+     * Get the channels URL for YouTube Data v3 API.
      *
      * @return string
      */
@@ -114,13 +114,23 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
     }
 
     /**
-     * Get the videos URL for YouTube DATA v3 API.
+     * Get the videos URL for YouTube Data v3 API.
      *
      * @return string
      */
     protected function getVideosUrl()
     {
         return 'https://www.googleapis.com/youtube/v3/videos';
+    }
+
+    /**
+     * Get the playlist items URL for YouTube Data v3 API.
+     *
+     * @return string
+     */
+    protected function getPlaylistItemsUrl()
+    {
+        return 'https://www.googleapis.com/youtube/v3/playlistItems';
     }
 
     /**
@@ -160,18 +170,38 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
      * Get the GET fields for the videos request.
      *
      * @param string $token
-     * @param string $channelId
+     * @param string $id
      * @return array
      */
-    protected function getVideosFields($token = '', $videoId = '')
+    protected function getVideosFields($token = '', $id = '')
     {
         return [
             'part' => 'snippet',
-            'id' => $videoId,
+            'id' => $id,
             'access_token' => $token,
         ];
     }
 
+    /**
+     * Get the GET fields for the playlist items request.
+     *
+     * @param string $token
+     * @param string $id
+     * @param integer $maxResults
+     * @param string $pageToken
+     * @return array
+     */
+    protected function getPlaylistItemsFields($id = '', $token = '', $maxResults = 5, $pageToken = '')
+    {
+        return [
+            'part' => 'snippet',
+            'playlistId' => $id,
+            'access_token' => $token,
+            'pageToken' => $pageToken,
+            'maxResults' => $maxResults,
+        ];
+    
+    }
     /**
      * Get the subscriptions reponse for the given token.
      * 
@@ -210,15 +240,33 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
      * Get the videos reponse for the given token and video ID.
      *
      * @param string $token
-     * @param string $videoId
+     * @param string $id
      * @return array|null
      */
-    protected function getVideosResponse($token = '', $videoId = '')
+    protected function getVideosResponse($token = '', $id = '')
     {
-        $response = (empty($token) || empty($videoId)) ? null : 
+        $response = (empty($token) || empty($id)) ? null : 
             $this->getHttpClient()->get(
                 $this->getVideosUrl(),
-                $this->getVideosFields($token, $videoId)
+                $this->getVideosFields($token, $id)
+            );
+
+        return $response;
+    }
+
+    /**
+     * Get the playlist items reponse for the given token and playlist ID.
+     *
+     * @param string $token
+     * @param string $id
+     * @return array|null
+     */
+    protected function getPlaylistItemsResponse($id = '', $token = '', $maxResults = 5, $pageToken = '')
+    {
+        $response = (empty($token) || empty($id)) ? null : 
+            $this->getHttpClient()->get(
+                $this->getPlaylistItemsUrl(),
+                $this->getPlaylistItemsFields($id, $token, $maxResults, $pageToken)
             );
 
         return $response;
@@ -261,7 +309,6 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
             'subscriberCount',
             'videoCount'
         ];
-
         $response = $this->getChannelStatisticsResponse($token);
 
         return isset($response['items'][0]['statistics']) ? 
@@ -271,21 +318,64 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
     /**
      * Get information about a YouTube video.
      *
-     * @param string $videoId
+     * @param string $id
      * @param string $token
      * @return array|null
      */
-    public function video($videoId = '', $token = '') {
+    public function video($id = '', $token = '') {
         $token = empty($token) ? (empty($this->user) ? null : $this->user->token) : $token;
-        $stats = [
-            'viewCount',
-            'subscriberCount',
-            'videoCount'
-        ];
-
-        $response = $this->getVideosResponse($token, $videoId);
+        $response = $this->getVideosResponse($token, $id);
 
         return isset($response['items'][0]) ? (new YouTubeVideo($response)) : null;
+    }
+
+    /**
+     * Get information about a YouTube playlist.
+     *
+     * @param string $id
+     * @param string $token
+     * @param integer $maxResults
+     * @param string $pageToken
+     * @return void
+     */
+    public function playlist($id = '', $token = '', $start = 0, $end = null) {
+        $token = empty($token) ? (empty($this->user) ? null : $this->user->token) : $token;
+        $maxResults = 50;
+        $nextPageToken = '';
+        $pageStart = intdiv($start - 1, $maxResults) + 1;
+        
+        if (empty($end)){
+            $response = $this->getPlaylistItemsResponse($id, $token);
+            if (!empty($response['items'])) {
+                $end = $response['pageInfo']['totalResults'];
+                $playlist = new YouTubePlaylist($response['items'][0]['snippet']['playlistId']);
+            }else{
+                return null;
+                $end = $maxResults;
+            }
+        }
+
+        $pageEnd = intdiv($end - 1, $maxResults) + 1;
+
+        for ($p = 1; $p <= $pageEnd; $p++) {
+            $response = $this->getPlaylistItemsResponse($id, $token, $maxResults, $nextPageToken);
+            if (empty($response['items'])) {
+                //Something went wrong on this response.
+                //Lets break the loop and returns what we have so far.
+                break; 
+            }
+            if ($p >= $pageStart) {
+                foreach ($response['items'] as $item) {
+                    $position = $item['snippet']['position'] + 1;
+                    if ($position >= $start && $position <= $end) {
+                        $playlist->insert($this->video($item['snippet']['resourceId']['videoId'], $token), $position);
+                    }
+                }
+            }
+            $nextPageToken = $p < $pageEnd ? $response['nextPageToken'] : '';
+        }
+
+        return $playlist;
     }
 
     /**
