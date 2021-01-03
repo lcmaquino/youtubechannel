@@ -114,6 +114,16 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
     }
 
     /**
+     * Get the videos URL for YouTube DATA v3 API.
+     *
+     * @return string
+     */
+    protected function getVideosUrl()
+    {
+        return 'https://www.googleapis.com/youtube/v3/videos';
+    }
+
+    /**
      * Get the GET fields for the subscriptions request.
      *
      * @param string $token
@@ -147,6 +157,22 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
     }
 
     /**
+     * Get the GET fields for the videos request.
+     *
+     * @param string $token
+     * @param string $channelId
+     * @return array
+     */
+    protected function getVideosFields($token = '', $videoId = '')
+    {
+        return [
+            'part' => 'snippet',
+            'id' => $videoId,
+            'access_token' => $token,
+        ];
+    }
+
+    /**
      * Get the subscriptions reponse for the given token.
      * 
      * @param string $token
@@ -175,6 +201,24 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
             $this->getHttpClient()->get(
                 $this->getChannelsUrl(),
                 $this->getChannelStatisticsFields($token)
+            );
+
+        return $response;
+    }
+
+    /**
+     * Get the videos reponse for the given token and video ID.
+     *
+     * @param string $token
+     * @param string $videoId
+     * @return array|null
+     */
+    protected function getVideosResponse($token = '', $videoId = '')
+    {
+        $response = (empty($token) || empty($videoId)) ? null : 
+            $this->getHttpClient()->get(
+                $this->getVideosUrl(),
+                $this->getVideosFields($token, $videoId)
             );
 
         return $response;
@@ -222,6 +266,26 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
 
         return isset($response['items'][0]['statistics']) ? 
             $this->formatStatistics($stats, $response['items'][0]['statistics']) : null;
+    }
+
+    /**
+     * Get information about a YouTube video.
+     *
+     * @param string $videoId
+     * @param string $token
+     * @return array|null
+     */
+    public function video($videoId = '', $token = '') {
+        $token = empty($token) ? (empty($this->user) ? null : $this->user->token) : $token;
+        $stats = [
+            'viewCount',
+            'subscriberCount',
+            'videoCount'
+        ];
+
+        $response = $this->getVideosResponse($token, $videoId);
+
+        return isset($response['items'][0]) ? (new YouTubeVideo($response)) : null;
     }
 
     /**
