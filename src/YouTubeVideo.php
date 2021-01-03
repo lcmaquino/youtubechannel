@@ -87,7 +87,7 @@ class YouTubeVideo
         $this->title = $snippet['title'];
         $this->description = $snippet['description'];
         $this->thumbnails = $snippet['thumbnails'];
-        $this->tags = $snippet['tags'];
+        $this->tags = isset($snippet['tags']) ? $snippet['tags'] : [];
         return $this;
     }
 
