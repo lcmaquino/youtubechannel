@@ -59,6 +59,15 @@ class YouTubePlaylist
     }
 
     /**
+     * Get the items in the playlist.
+     *
+     * @return array
+     */
+    public function getItems(){
+        return $this->items;
+    }
+
+    /**
      * Get the position of each video in the playlist.
      *
      * @return array

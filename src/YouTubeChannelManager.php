@@ -343,6 +343,7 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
         $maxResults = 50;
         $nextPageToken = '';
         $pageStart = intdiv($start - 1, $maxResults) + 1;
+        $playlist = null;
         
         if (empty($end)){
             $response = $this->getPlaylistItemsResponse($id, $token);
