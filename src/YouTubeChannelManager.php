@@ -33,7 +33,6 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
             'https://www.googleapis.com/auth/youtube.readonly'
         ];
         $this->httpClient = new HttpClient();
-        $this->user = null;
     }
 
     /**
@@ -334,8 +333,8 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
      *
      * @param string $id
      * @param string $token
-     * @param integer $maxResults
-     * @param string $pageToken
+     * @param integer $start
+     * @param string $end
      * @return void
      */
     public function playlist($id = '', $token = '', $start = 0, $end = null) {
@@ -343,40 +342,38 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
         $maxResults = 50;
         $nextPageToken = '';
         $pageStart = intdiv($start - 1, $maxResults) + 1;
-        $playlist = null;
-        
-        if (empty($end)){
-            $response = $this->getPlaylistItemsResponse($id, $token);
-            if (!empty($response['items'])) {
-                $end = $response['pageInfo']['totalResults'];
-                $playlist = new YouTubePlaylist($response['items'][0]['snippet']['playlistId']);
-            }else{
-                return null;
-                $end = $maxResults;
-            }
-        }
+        $response = $this->getPlaylistItemsResponse($id, $token);
 
-        $pageEnd = intdiv($end - 1, $maxResults) + 1;
+        if (isset($response['items'])) {
+            $playlist = new YouTubePlaylist($response['items'][0]['snippet']['playlistId']);
+            $end = ($end && $end <= $response['pageInfo']['totalResults']) ? $end : $response['pageInfo']['totalResults'];
+            $pageEnd = intdiv($end - 1, $maxResults) + 1;
+    
+            for ($p = 1; $p <= $pageEnd; $p++) {
+                $response = $this->getPlaylistItemsResponse($id, $token, $maxResults, $nextPageToken);
+                //if($p == 2) dd($response);
+                if (empty($response['items'])) {
+                    //Something went wrong on this response.
+                    //Lets break the loop and returns what we have so far.
+                    break; 
+                }
 
-        for ($p = 1; $p <= $pageEnd; $p++) {
-            $response = $this->getPlaylistItemsResponse($id, $token, $maxResults, $nextPageToken);
-            if (empty($response['items'])) {
-                //Something went wrong on this response.
-                //Lets break the loop and returns what we have so far.
-                break; 
-            }
-            if ($p >= $pageStart) {
-                foreach ($response['items'] as $item) {
-                    $position = $item['snippet']['position'] + 1;
-                    if ($position >= $start && $position <= $end) {
-                        $playlist->insert($this->video($item['snippet']['resourceId']['videoId'], $token), $position);
+                if ($p >= $pageStart) {
+                    foreach ($response['items'] as $item) {
+                        $position = $item['snippet']['position'];
+                        if ($position >= $start && $position <= $end) {
+                            $playlist->insert($this->video($item['snippet']['resourceId']['videoId'], $token), $position);
+                        }
                     }
                 }
+                
+                $nextPageToken = $p < $pageEnd ? $response['nextPageToken'] : '';
             }
-            $nextPageToken = $p < $pageEnd ? $response['nextPageToken'] : '';
+    
+            return $playlist;
+        }else{
+            return null;
         }
-
-        return $playlist;
     }
 
     /**

@@ -122,8 +122,8 @@ class YouTubePlaylist
      */
     public function insert(YouTubeVideo $video, $position = null){
         if ($position !== null) {
-            $this->items[$position - 1] = $video;
-            $this->positions[$position - 1] = $video->getId();
+            $this->items[$position] = $video;
+            $this->positions[$position] = $video->getId();
         }else{
             $this->items[] = $video;
             $this->positions[] = $video->getId();

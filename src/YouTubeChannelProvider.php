@@ -13,9 +13,6 @@ class YouTubeChannelProvider extends ServiceProvider
      */
     public function register()
     {
-        $source = realpath(__DIR__ . '/config/googleoauth2.php');
-        $this->mergeConfigFrom($source, 'googleoauth2');
-        
         $this->app->singleton(YouTubeChannelManager::class, function($app){
             return (new YouTubeChannelManager(config('googleoauth2'), $app->request));
         });
@@ -29,5 +26,18 @@ class YouTubeChannelProvider extends ServiceProvider
     public function provides()
     {
         return [YouTubeChannelManager::class];
+    }
+
+    /**
+     * Bootstrap services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        $source = realpath(__DIR__ . '/config/googleoauth2.php');
+        
+        $this->publishes([$source => config_path('googleoauth2.php')]);
+        $this->mergeConfigFrom($source, 'googleoauth2');
     }
 }
