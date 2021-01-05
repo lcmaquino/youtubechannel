@@ -351,7 +351,7 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
     
             for ($p = 1; $p <= $pageEnd; $p++) {
                 $response = $this->getPlaylistItemsResponse($id, $token, $maxResults, $nextPageToken);
-                //if($p == 2) dd($response);
+
                 if (empty($response['items'])) {
                     //Something went wrong on this response.
                     //Lets break the loop and returns what we have so far.
