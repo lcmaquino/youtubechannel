@@ -120,14 +120,15 @@ class YouTubePlaylist
      * @param int $position
      * @return $this
      */
-    public function insert(YouTubeVideo $video, $position = null){
+    public function insert(YouTubeVideo $video = null, $position = null){
+        $videoId = empty($video) ? null : $video->getId();
         if ($position !== null) {
             $this->items[$position] = $video;
-            $this->positions[$position] = $video->getId();
+            $this->positions[$position] = $videoId;
         }else{
             $this->items[] = $video;
-            $this->positions[] = $video->getId();
+            $this->positions[] = $videoId;
         }
-        $this;
+        return $this;
     }
 }

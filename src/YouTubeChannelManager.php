@@ -319,7 +319,7 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
      *
      * @param string $id
      * @param string $token
-     * @return array|null
+     * @return YouTubeVideo|null
      */
     public function video($id = '', $token = '') {
         $token = empty($token) ? (empty($this->user) ? null : $this->user->token) : $token;
@@ -362,7 +362,8 @@ class YouTubeChannelManager extends GoogleOAuth2Manager
                     foreach ($response['items'] as $item) {
                         $position = $item['snippet']['position'];
                         if ($position >= $start && $position <= $end) {
-                            $playlist->insert($this->video($item['snippet']['resourceId']['videoId'], $token), $position);
+                            $video = $this->video($item['snippet']['resourceId']['videoId'], $token);
+                            $playlist->insert($video, $position);
                         }
                     }
                 }
